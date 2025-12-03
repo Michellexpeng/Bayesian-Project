@@ -1,52 +1,153 @@
-# Bayesian Conditional Harmonization (Symbolic Music)
+# Bayesian Chord Progression Model
 
-Goal: Generate harmonization/accompaniment conditioned on a given melody, using POP909 and Classical Piano MIDI datasets. We will compare a simple HMM baseline, a Bayesian advanced model (HDP-HSMM/HDP-HMM with key-aware priors), and (optionally) a small LSTM/Transformer or API reference.
+A Bayesian approach to modeling chord progressions in pop music using Hidden Markov Models (HMM) with functional harmony and mode-conditional modeling.
 
-## Datasets
-- POP909 (primary): melody–chord–piano aligned symbolic tracks for 909 pop songs.
-  - Link: https://github.com/music-x-lab/POP909-Dataset
-- Classical Piano MIDI (auxiliary): ~295 pieces by 19 classical composers (style sensitivity/generalization checks).
-  - Link: https://www.kaggle.com/datasets/soumikrakshit/classical-music-midi
+## Overview
 
-## Method (high-level)
-- Baseline: Markov/HMM over chord states with simple emissions/features.
-- Bayesian advanced: HDP-HSMM/HDP-HMM with key-aware priors to capture variable-length harmonic segments and provide calibrated uncertainty; posterior sampling for diverse arrangements.
-- Neural/API reference (optional): lightweight LSTM/Transformer trained from scratch, and/or an API/pretrained generator for context (not the primary focus).
+This project implements and compares two HMM-based approaches for chord progression modeling:
+1. **Baseline Model**: Absolute chord representation (193 unique chords)
+2. **Conditional Model**: Functional harmony with mode conditioning (20 functional chords)
 
-## Evaluation
-We will compare objective metrics (chord accuracy, functional consistency, voice-leading penalties, structure F1, likelihood/perplexity), and human listening tests.
+**Key Results:**
+- Conditional model achieves **56.6% perplexity reduction** over baseline (4.96 vs 11.44)
+- **41.82% prediction accuracy** (+23.0% improvement over baseline)
+- **89.6% vocabulary reduction** through functional chord representation (193 → 20 chords)
 
-## Repository layout
+## Dataset
+- **POP909**: 909 pop songs with melody-chord-piano alignment ([GitHub](https://github.com/music-x-lab/POP909-Dataset))
+- **Split**: 70% train (636 songs) / 15% validation (136 songs) / 15% test (137 songs)
+- **Features**: Beat-aligned chord annotations, key signatures, mode labels
+
+## Models
+
+### Baseline HMM (`hmm_baseline.pkl`)
+- Absolute chord representation (C, C#m, D7, etc.)
+- 193 unique chords after C/Am transposition
+- Trained on 636 songs (70% of dataset)
+- Test perplexity: 11.44
+- Test accuracy: 33.99%
+
+### Conditional HMM (`hmm_conditional.pkl`) ⭐ Best Model
+- Functional harmony (Roman numerals: I, IV, V, vi, etc.)
+- Mode-conditional: P(chord | previous_chord, mode) where mode ∈ {major, minor}
+- 20 functional chords (7 major + 7 minor diatonic + 5 chromatic + 1 special)
+- Test perplexity: 4.96 (56.6% improvement over baseline)
+- Test accuracy: 41.82% (23.0% improvement over baseline)
+- Handles chromatic chords: bII (Neapolitan), bVII (subtonic), #IV, etc.
+
+
+## Project Structure
 ```
 .
-├── data/                 # place raw datasets here (git-ignored)
-├── notebooks/            # optional exploration notebooks
-├── scripts/              # runnable scripts (quickstart, baselines)
+├── data/
+│   ├── POP909/              # POP909 dataset (909 songs)
+│   └── archive/             # Classical music dataset (optional)
+├── models/
+│   ├── hmm_baseline.pkl     # Baseline model (193 chords, trained on 636 songs)
+│   └── hmm_conditional.pkl  # Conditional model (20 functional chords) ⭐
+├── scripts/
+│   ├── train_baseline.py       # Train baseline model
+│   ├── train_conditional.py    # Train conditional model
+│   ├── test_baseline.py        # Test baseline model
+│   ├── test_conditional.py     # Test conditional model
+│   ├── compare_models.py       # Compare model performance
+│   └── update_model_accuracy.py # Update model metadata with test accuracy
+├── notebooks/
+│   ├── 01_EDA_Music_Datasets.ipynb # Dataset exploration
+│   └── Model_Visualization.ipynb   # Model visualization & analysis
+├── validation_results/
+│   ├── BASELINE_SUMMARY.md         # Baseline model report
+│   └── CONDITIONAL_SUMMARY.md      # Conditional model report ⭐
 ├── src/
-│   ├── data/             # dataset loaders/preprocessing
-│   ├── evaluation/       # metrics and evaluation utilities
-│   ├── models/           # HMM baseline, Bayesian models, neural refs
-│   └── utils/            # MIDI IO and music utilities
+│   └── data/                # Dataset loaders & preprocessing
+│       ├── pop909_parser.py      # POP909 dataset loader
+│       ├── chord_preprocessing.py # Chord normalization & transposition
+│       └── key_aware_features.py  # Functional chord extraction
 └── README.md
 ```
 
-## Quickstart
-1) Create a virtual environment and install dependencies:
 
+
+## Quick Start
+
+### 1. Setup Environment
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # macOS/Linux
+# or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 ```
 
-2) Optional: point to a POP909 root with MIDI files and run a quick sanity check:
+### 2. Download Dataset
+Download POP909 dataset and place it in `data/POP909/`
 
+### 3. Train Models
+
+**Train baseline model:**
 ```bash
-python scripts/quickstart.py --pop909 /path/to/POP909
+python scripts/train_baseline.py --pop909 data/POP909 --out models/hmm_baseline.pkl
 ```
 
-This script will simply enumerate candidate songs and print a tiny toy HMM demo so you can verify the environment.
+**Train conditional model (recommended):**
+```bash
+python scripts/train_conditional.py --pop909 data/POP909 --out models/hmm_conditional.pkl
+```
 
-## Notes
-- Heavy Bayesian libraries (NumPyro/Pyro) are not required for the quickstart and will be added when implementing the advanced model.
-- For now, the baseline HMM uses only standard Python and NumPy (hmmlearn is optional later).
+Add `--limit 20` for quick testing on 20 songs.
+
+### 4. Evaluate Models
+
+**Test baseline:**
+```bash
+python scripts/test_baseline.py --model models/hmm_baseline.pkl --pop909 data/POP909
+```
+
+**Test conditional model:**
+```bash
+python scripts/test_conditional.py --model models/hmm_conditional.pkl --pop909 data/POP909
+```
+
+**Compare models:**
+```bash
+python scripts/compare_models.py
+```
+
+### 5. Visualize Results
+Open `notebooks/Model_Visualization.ipynb` to visualize:
+- Model performance comparison
+- Transition probability heatmaps
+- Chord distribution analysis
+- Mode-specific patterns
+
+## Results Summary
+
+See detailed reports:
+- [`validation_results/BASELINE_SUMMARY.md`](validation_results/BASELINE_SUMMARY.md) - Baseline model analysis
+- [`validation_results/CONDITIONAL_SUMMARY.md`](validation_results/CONDITIONAL_SUMMARY.md) - Conditional model analysis ⭐
+
+**Key Findings:**
+- Functional harmony dramatically reduces vocabulary (193 → 20 chords, 89.6% reduction)
+- Mode-conditional modeling captures major/minor differences in progression patterns
+- 56.6% perplexity improvement (11.44 → 4.96)
+- 23.0% accuracy improvement (33.99% → 41.82%, +1755 correct predictions)
+- Chromatic chords (bII, bVII) are frequent in pop music and handled correctly
+- Prediction errors are musically coherent (functionally similar substitutions)
+
+## Technical Details
+
+**Modeling Approach:**
+- 1st-order Markov model: P(chord_t | chord_{t-1}, mode)
+- Add-one smoothing for unseen transitions
+- Key transposition to C major / A minor for data pooling
+- Functional chord extraction using scale degree analysis
+
+**Evaluation Metrics:**
+- **Perplexity**: Measures model uncertainty (lower = better)
+- **Prediction Accuracy**: Next-chord prediction correctness
+- **Vocabulary Coverage**: Percentage of chords in test data seen during training
+
+## Future Work
+- 2nd-order Markov models (bigram → trigram)
+- Melody conditioning: P(chord | previous_chord, melody, mode)
+- Rhythm and duration modeling
+- Neural baselines (LSTM/Transformer) for comparison
