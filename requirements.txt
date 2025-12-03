@@ -1,7 +1,18 @@
+# Core scientific computing
 numpy==1.26.4
+scipy==1.13.1
+
+# Data processing
+pandas==2.2.0
+
+# Visualization
+matplotlib==3.8.2
+seaborn==0.13.1
+
+# Music processing
 mido==1.3.2
 music21==8.3.0
-scipy==1.13.1
+
 # Advanced models (to be added later as needed)
 # pyro-ppl
 # numpyro
