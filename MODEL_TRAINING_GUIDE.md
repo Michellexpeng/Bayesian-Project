@@ -1,16 +1,16 @@
-# HMM 模型训练与对比指南
+# HMM Model Training Guide
 
-## 📋 概述
+## 📋 Overview
 
-本项目包含两个和弦序列建模方法：
-- **Baseline HMM**: 基于转调的标准HMM
-- **Conditional HMM**: 基于功能和弦的调式条件HMM
+This project implements two approaches for chord sequence modeling:
+- **Baseline HMM**: Standard HMM with transposition-based chord representation
+- **Conditional HMM**: Mode-conditional HMM with functional harmony
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 训练模型
+### 1. Train Models
 
-#### 训练 Baseline HMM
+#### Train Baseline HMM
 ```bash
 python scripts/train_baseline.py \
     --pop909 data/POP909 \
@@ -18,7 +18,7 @@ python scripts/train_baseline.py \
     --seed 42
 ```
 
-#### 训练 Conditional HMM
+#### Train Conditional HMM
 ```bash
 python scripts/train_conditional.py \
     --pop909 data/POP909 \
@@ -26,9 +26,9 @@ python scripts/train_conditional.py \
     --seed 42
 ```
 
-**重要**: 两个模型必须使用**相同的seed**以确保数据划分一致！
+**Important**: Both models must use the **same seed** to ensure consistent data splits!
 
-### 2. 对比模型
+### 2. Compare Models
 
 ```bash
 python scripts/compare_models.py \
@@ -36,62 +36,63 @@ python scripts/compare_models.py \
     --conditional models/hmm_conditional.pkl
 ```
 
-### 3. 测试模型
+### 3. Test Models
 
-#### 测试 Baseline HMM
+#### Test Baseline HMM
 ```bash
 python scripts/test_baseline.py \
     --model models/hmm_baseline.pkl \
     --pop909 data/POP909
 ```
 
-#### 测试 Conditional HMM
+#### Test Conditional HMM
 ```bash
 python scripts/test_conditional.py \
     --model models/hmm_conditional.pkl \
     --pop909 data/POP909
 ```
 
-## 📊 最新结果 (2025-12-03)
+## 📊 Latest Results (2025-12-03)
 
-使用相同的随机划分 (seed=42):
+Using identical random splits (seed=42):
 
-| 指标 | Baseline HMM | Conditional HMM | 改进 |
-|------|--------------|-----------------|------|
-| **词汇量** | 193 | 20 | **↓89.6%** |
-| **训练困惑度** | 11.61 | 5.04 | **↓56.6%** |
-| **验证困惑度** | 12.20 | 5.02 | **↓58.9%** |
-| **测试困惑度** | 12.46 | 5.06 | **↓59.4%** |
+| Metric | Baseline HMM | Conditional HMM | Improvement |
+|--------|--------------|-----------------|-------------|
+| **Vocabulary Size** | 193 | 20 | **↓️89.6%** |
+| **Train Perplexity** | 11.61 | 5.04 | **↓️56.6%** |
+| **Val Perplexity** | 12.20 | 5.02 | **↓️58.9%** |
+| **Test Perplexity** | 11.44 | 4.96 | **↓️56.6%** |
+| **Test Accuracy** | 33.99% | 41.82% | **↑️23.0%** |
 
-## 🔧 参数说明
+## 🔧 Parameters
 
-### 训练参数
+### Training Parameters
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `--pop909` | 必填 | POP909数据集路径 |
-| `--out` | `models/hmm_*.pkl` | 输出模型文件 |
-| `--seed` | 42 | 随机种子（确保复现性） |
-| `--train-ratio` | 0.7 | 训练集比例 |
-| `--val-ratio` | 0.15 | 验证集比例 |
-| `--limit` | None | 限制歌曲数量（调试用） |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--pop909` | Required | Path to POP909 dataset |
+| `--out` | `models/hmm_*.pkl` | Output model file |
+| `--seed` | 42 | Random seed (for reproducibility) |
+| `--train-ratio` | 0.7 | Training set ratio |
+| `--val-ratio` | 0.15 | Validation set ratio |
+| `--limit` | None | Limit number of songs (for debugging) |
 
-### Baseline 特有参数
+### Baseline-Specific Parameters
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `--no-transpose` | False | 禁用转调到C/Am |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--no-transpose` | False | Disable transposition to C/Am |
 
-## 📁 输出文件
+## 📁 Output Files
 
-### 模型文件结构
+### Model File Structure
 
 ```python
 {
-    "vocab": dict,           # 和弦 → 整数映射
-    "inv_vocab": dict,       # 整数 → 和弦映射
-    "start_prob": np.array,  # 初始概率
-    "trans_prob": np.array,  # 转移概率矩阵
+    "vocab": dict,           # Chord → integer mapping
+    "inv_vocab": dict,       # Integer → chord mapping
+    "start_prob": np.array,  # Initial state probabilities
+    "trans_prob": np.array,  # Transition probability matrix
     "metadata": {
         "model_type": str,
         "timestamp": str,
@@ -102,14 +103,15 @@ python scripts/test_conditional.py \
         "train_perplexity": float,
         "val_perplexity": float,
         "test_perplexity": float,
-        # Conditional 特有:
+        "test_accuracy": float,  # Test set accuracy (%)
+        # Conditional-specific:
         "n_major_train": int,
         "n_minor_train": int
     }
 }
 ```
 
-### Conditional HMM 额外字段
+### Conditional HMM Additional Fields
 
 ```python
 {
@@ -120,112 +122,114 @@ python scripts/test_conditional.py \
 }
 ```
 
-## 🔍 训练流程对比
+## 🔍 Training Workflow Comparison
 
 ### Baseline HMM
 
 ```
-1. 加载数据 → 随机划分 (seed=42)
-2. 提取和弦序列 → 转调至C大调/A小调
-3. 构建词汇表 (193个和弦)
-4. 训练单一HMM
-5. 计算困惑度
-6. 分析转移模式
+1. Load data → Random split (seed=42)
+2. Extract chord sequences → Transpose to C major/A minor
+3. Build vocabulary (193 chords)
+4. Train single HMM
+5. Calculate perplexity
+6. Analyze transition patterns
 ```
 
 ### Conditional HMM
 
 ```
-1. 加载数据 → 随机划分 (seed=42)
-2. 提取功能和弦 → 罗马数字标记
-3. 构建词汇表 (20个功能和弦)
-4. 按调式分离 → 训练大调/小调独立HMM
-5. 计算条件困惑度
-6. 分析调式特定模式
+1. Load data → Random split (seed=42)
+2. Extract functional chords → Roman numeral notation
+3. Build vocabulary (20 functional chords)
+4. Separate by mode → Train major/minor independent HMMs
+5. Calculate conditional perplexity
+6. Analyze mode-specific patterns
 ```
 
-## 📈 关键改进
+## 📈 Key Improvements
 
-### 已修复的问题
+### Fixed Issues
 
-✅ **统一数据划分**: 两个模型现在使用相同的随机划分策略  
-✅ **一致的输出格式**: 训练日志格式统一  
-✅ **移除硬编码**: Conditional模型不再包含写死的baseline结果  
-✅ **独立对比脚本**: 使用专门的脚本进行模型对比  
+✅ **Unified data splits**: Both models now use identical random split strategy  
+✅ **Consistent output format**: Unified training log format  
+✅ **Removed hardcoded values**: Conditional model no longer contains hardcoded baseline results  
+✅ **Independent comparison script**: Dedicated script for model comparison  
 
-### 代码质量提升
+### Code Quality Enhancements
 
-- 🎯 模块化设计
-- 📊 详细的训练日志
-- 🔄 可复现的实验（固定seed）
-- 📦 完整的元数据保存
-- 🧪 独立的测试和对比脚本
+- 🎯 Modular design
+- 📊 Detailed training logs
+- 🔄 Reproducible experiments (fixed seed)
+- 📦 Complete metadata preservation
+- 🧪 Independent test and comparison scripts
 
-## 🎓 模型说明
+## 🎓 Model Details
 
 ### Baseline HMM
 
-**特点**:
-- 将所有歌曲转调到C大调或A小调
-- 统一的转移矩阵
-- 词汇量: 193个和弦（包括各种和弦质量）
+**Characteristics**:
+- Transpose all songs to C major or A minor
+- Single unified transition matrix
+- Vocabulary size: 193 chords (including various chord qualities)
 
-**优点**:
-- 简单直观
-- 计算高效
+**Advantages**:
+- Simple and intuitive
+- Computationally efficient
 
-**缺点**:
-- 词汇量大，数据稀疏
-- 无法区分大调/小调的不同模式
+**Disadvantages**:
+- Large vocabulary, sparse data
+- Cannot distinguish major/minor mode patterns
 
 ### Conditional HMM
 
-**特点**:
-- 提取功能和弦（罗马数字）
-- 大调/小调独立转移矩阵
-- 词汇量: 20个功能和弦
+**Characteristics**:
+- Extract functional chords (Roman numerals)
+- Separate major/minor transition matrices
+- Vocabulary size: 20 functional chords
 
-**优点**:
-- 词汇量小，数据充分
-- 捕捉调式特定的和声模式
-- 困惑度显著降低（59.4%）
+**Advantages**:
+- Small vocabulary, sufficient data
+- Captures mode-specific harmonic patterns
+- Significantly lower perplexity (56.6% reduction)
+- Significantly higher accuracy (23.0% improvement)
 
-**缺点**:
-- 需要调性识别
-- 模型稍复杂（两个矩阵）
+**Disadvantages**:
+- Requires key identification
+- Slightly more complex (two matrices)
 
-## 🔬 评估指标
+## 🔬 Evaluation Metrics
 
-### 困惑度 (Perplexity)
+### Perplexity
 
 $$\text{Perplexity} = \exp\left(-\frac{1}{N}\sum_{i=1}^{N} \log P(x_i)\right)$$
 
-- **越低越好**
-- 衡量模型的不确定性
-- Baseline: 12.46 → Conditional: 5.06
+- **Lower is better**
+- Measures model uncertainty
+- Baseline: 11.44 → Conditional: 4.96 (56.6% improvement)
 
-### 预测准确率
+### Prediction Accuracy
 
-- 给定前一个和弦，预测下一个和弦
-- 使用贪婪策略: `argmax P(next|prev)`
-- 可通过测试脚本获得
+- Given previous chord, predict next chord
+- Uses greedy strategy: `argmax P(next|prev)`
+- Baseline: 33.99% → Conditional: 41.82% (23.0% improvement)
+- Calculated by `test_*.py` scripts, saved in model metadata
 
-## 🛠️ 故障排查
+## 🛠️ Troubleshooting
 
-### 常见问题
+### Common Issues
 
-**Q: 两个模型结果不一致？**
-A: 确保使用相同的 `--seed` 参数
+**Q: Models produce inconsistent results?**
+A: Ensure both models use the same `--seed` parameter
 
-**Q: 内存不足？**
-A: 使用 `--limit 100` 限制训练歌曲数量
+**Q: Out of memory?**
+A: Use `--limit 100` to restrict number of training songs
 
-**Q: 找不到模型文件？**
-A: 检查 `models/` 目录是否存在
+**Q: Cannot find model file?**
+A: Check if `models/` directory exists
 
-## 📚 引用
+## 📚 Citation
 
-如果使用本代码，请引用：
+If you use this code, please cite:
 
 ```bibtex
 @misc{pop909_hmm,
@@ -235,6 +239,9 @@ A: 检查 `models/` 目录是否存在
 }
 ```
 
-## 📞 联系方式
+## 📞 Contact
 
-如有问题或建议，请查看 `CODE_VALIDATION_REPORT.md` 获取详细的代码验证信息。
+For questions or suggestions, please refer to:
+- `validation_results/BASELINE_SUMMARY.md` - Detailed baseline model analysis
+- `validation_results/CONDITIONAL_SUMMARY.md` - Detailed conditional model analysis
+- `README.md` - Project overview
