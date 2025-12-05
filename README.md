@@ -112,7 +112,40 @@ python scripts/test_conditional.py --model models/hmm_conditional.pkl --pop909 d
 python scripts/compare_models.py
 ```
 
-### 5. Visualize Results
+### 5. Generate Music 🎵 NEW!
+Use your trained model to generate new chord progressions and convert them to playable MIDI:
+
+**Quick test (generates test song):**
+```bash
+python music_generation/quick_test.py
+```
+
+**Generate full music with melody and bass:**
+```bash
+python music_generation/generate_full_music.py \
+    --model models/hmm_conditional.pkl \
+    --mode major \
+    --bars 8 \
+    --output generated_music/my_song.mid
+```
+
+**Generate simple chord progression:**
+```bash
+python music_generation/generate_music.py \
+    --model models/hmm_conditional.pkl \
+    --mode major \
+    --length 32 \
+    --output generated_music/chords.mid
+```
+
+**Play the generated MIDI:**
+- Open `.mid` file in GarageBand (macOS)
+- Use QuickTime Player: `open generated_music/my_song.mid`
+- Upload to online MIDI player
+
+📖 **See [`music_generation/`](music_generation/) folder for detailed instructions!**
+
+### 6. Visualize Results
 Open `notebooks/Model_Visualization.ipynb` to visualize:
 - Model performance comparison
 - Transition probability heatmaps
