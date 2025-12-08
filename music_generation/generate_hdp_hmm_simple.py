@@ -10,8 +10,7 @@ import numpy as np
 from pathlib import Path
 from midiutil import MIDIFile
 
-# --- 1. 修改点：项目根目录路径计算 ---
-# 确保无论脚本在 scripts/ 还是 music_generation/ 都能找到根目录
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -64,8 +63,7 @@ def main():
     parser.add_argument('--output', default='hdp_hmm_simple.mid')
     args = parser.parse_args()
 
-    # --- 2. 修改点：智能模型路径查找 ---
-    # 尝试直接路径或相对于根目录的路径
+
     model_path = Path(args.model)
     if not model_path.exists():
         model_path = PROJECT_ROOT / args.model

@@ -107,13 +107,10 @@ def main():
         return
 
     # --- 📂 Output Path Logic ---
-    # 1. 定义目标文件夹: Project_Root/generated_music
     output_dir = PROJECT_ROOT / "generated_music"
-    
-    # 2. 自动创建文件夹 (如果不存在)
+
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # 3. 组合完整路径 (只取文件名)
     output_filename = Path(args.output).name
     final_output_path = output_dir / output_filename
 

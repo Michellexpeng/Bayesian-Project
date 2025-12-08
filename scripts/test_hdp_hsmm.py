@@ -59,18 +59,14 @@ def convert_hsmm_to_hmm(pi_star, A_hsmm, dur_params):
     
     return pi_star, A_hmm
 
-# ... (前面的 import 和 convert_hsmm_to_hmm 函数保持不变) ...
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='models/hdp_hsmm.pkl')
     parser.add_argument('--pop909', type=str, default='data/POP909')
     args = parser.parse_args()
     
-    # --- 🔍 路径修正逻辑 ---
     project_root = Path(__file__).resolve().parents[1]
     
-    # 模型路径
     model_path = Path(args.model)
     if not model_path.exists():
         model_path = project_root / args.model
@@ -78,7 +74,6 @@ def main():
         print(f"❌ Error: Model file not found at: {model_path}")
         return
 
-    # 数据路径
     data_root = Path(args.pop909)
     if not data_root.exists():
         data_root = project_root / args.pop909

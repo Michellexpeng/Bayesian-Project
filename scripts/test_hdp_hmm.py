@@ -10,7 +10,6 @@ import numpy as np
 import pickle
 from collections import defaultdict, Counter
 
-# 添加项目根目录到路径
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -113,23 +112,17 @@ def evaluate_hmm(sequences, pi, A, B, inv_vocab):
     
     return perplexity, accuracy, confusion
 
-# ... (前面的 import 和 helper functions 保持不变) ...
 
 def main():
     parser = argparse.ArgumentParser()
-    # 默认值依然写 'models/hdp_hmm.pkl'，但我们会用逻辑修正它
     parser.add_argument('--model', type=str, default='models/hdp_hmm.pkl')
     parser.add_argument('--pop909', type=str, default='data/POP909')
     args = parser.parse_args()
     
-    # --- 🔍 路径修正逻辑开始 ---
-    # 获取项目根目录 (scripts 的上一级)
     project_root = Path(__file__).resolve().parents[1]
     
-    # 1. 处理模型路径
     model_path = Path(args.model)
     if not model_path.exists():
-        # 如果当前目录下找不到，尝试在项目根目录下找
         model_path = project_root / args.model
         
     if not model_path.exists():
@@ -137,7 +130,6 @@ def main():
         print(f"   Current working directory: {Path.cwd()}")
         return
 
-    # 2. 处理数据路径
     data_root = Path(args.pop909)
     if not data_root.exists():
         data_root = project_root / args.pop909
@@ -145,7 +137,6 @@ def main():
     if not data_root.exists():
         print(f"❌ Error: Data folder not found at: {data_root}")
         return
-    # --- 🔍 路径修正逻辑结束 ---
     
     print(f"\n{'=' * 80}")
     print(f"TESTING HDP-HMM - PREDICTION ACCURACY")
@@ -153,7 +144,7 @@ def main():
     
     # 1. Load Model
     print(f"[1/4] Loading model from {model_path} ...")
-    with open(model_path, "rb") as f: # <--- 注意这里改用了 model_path
+    with open(model_path, "rb") as f: 
         data = pickle.load(f)
     
     model = data["model"]
@@ -170,9 +161,8 @@ def main():
     # 2. Load Data (Last 15%)
     print(f"\n[2/4] Loading POP909 test set ...")
     
-    # 使用修正后的 data_root
     dataset = HarmonicDataset(data_root)
-    # 必须排序以保证 split 一致性
+
     all_songs = sorted(pop909_parser.find_songs(data_root))
     
     # Use exact same split logic as training (First 70% Train, Next 15% Val, Last 15% Test)
