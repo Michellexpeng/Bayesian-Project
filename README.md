@@ -7,11 +7,15 @@ A Bayesian approach to modeling chord progressions in pop music using Hidden Mar
 This project implements and compares two HMM-based approaches for chord progression modeling:
 1. **Baseline Model**: Absolute chord representation (193 unique chords)
 2. **Conditional Model**: Functional harmony with mode conditioning (20 functional chords)
+3. **HDP-HMM**: Bayesian Nonparametric HMM with infinite state space and key-aware priors.
+4. **HDP-HSMM**: Hierarchical Dirichlet Process Hidden Semi-Markov Model with explicit duration modeling.
 
 **Key Results:**
 - Conditional model achieves **56.6% perplexity reduction** over baseline (4.96 vs 11.44)
 - **41.82% prediction accuracy** (+23.0% improvement over baseline)
 - **89.6% vocabulary reduction** through functional chord representation (193 → 20 chords)
+- HDP-HSMM outperforms HDP-HMM in both perplexity (8.75 vs 9.11) and accuracy (48.08% vs 46.16%), demonstrating the value of explicit duration modeling for musical structure.
+- Functional Harmony reduces vocabulary size by 89.6% (193 $\to$ 20 chords), enabling more robust learning.
 
 ## Dataset
 - **POP909**: 909 pop songs with melody-chord-piano alignment ([GitHub](https://github.com/music-x-lab/POP909-Dataset))
@@ -27,7 +31,7 @@ This project implements and compares two HMM-based approaches for chord progress
 - Test perplexity: 11.44
 - Test accuracy: 33.99%
 
-### Conditional HMM (`hmm_conditional.pkl`) ⭐ Best Model
+### Conditional HMM (`hmm_conditional.pkl`) 
 - Functional harmony (Roman numerals: I, IV, V, vi, etc.)
 - Mode-conditional: P(chord | previous_chord, mode) where mode ∈ {major, minor}
 - 20 functional chords (7 major + 7 minor diatonic + 5 chromatic + 1 special)
@@ -35,34 +39,50 @@ This project implements and compares two HMM-based approaches for chord progress
 - Test accuracy: 41.82% (23.0% improvement over baseline)
 - Handles chromatic chords: bII (Neapolitan), bVII (subtonic), #IV, etc.
 
+### HDP-HMM (`hdp_hmm.pkl`)
+- Type: Hierarchical Dirichlet Process HMM
+- Features: Functional harmony + Key-Aware Priors
+- Mechanism: Automatically infers the number of hidden harmonic states (infinite state space).
+- Performance: Perplexity 9.11, Accuracy 46.16%
+
+### HDP-HSMM (`hdp_hsmm.pkl`) ⭐ Highest Accuracy
+- Type: HDP Hidden Semi-Markov Model
+- Features: Functional harmony + Key-Aware Priors + Explicit Duration Modeling
+- Mechanism: Models state duration explicitly (e.g., how long a chord lasts), solving the "rapid switching" problem of standard HMMs.
+- Performance: Perplexity 8.75, Accuracy 48.08%
 
 ## Project Structure
 ```
 .
 ├── data/
-│   ├── POP909/              # POP909 dataset (909 songs)
-│   └── archive/             # Classical music dataset (optional)
+│   ├── POP909/              # POP909 dataset root
 ├── models/
-│   ├── hmm_baseline.pkl     # Baseline model (193 chords, trained on 636 songs)
-│   └── hmm_conditional.pkl  # Conditional model (20 functional chords) ⭐
+│   ├── hmm_baseline.pkl
+│   ├── hmm_conditional.pkl
+│   ├── hdp_hmm.pkl          # HDP-HMM model
+│   └── hdp_hsmm.pkl         # HDP-HSMM model
+├── generated_music/         # Output folder for MIDI files
 ├── scripts/
-│   ├── train_baseline.py       # Train baseline model
-│   ├── train_conditional.py    # Train conditional model
-│   ├── test_baseline.py        # Test baseline model
-│   ├── test_conditional.py     # Test conditional model
-│   ├── compare_models.py       # Compare model performance
-│   └── update_model_accuracy.py # Update model metadata with test accuracy
-├── notebooks/
-│   ├── 01_EDA_Music_Datasets.ipynb # Dataset exploration
-│   └── Model_Visualization.ipynb   # Model visualization & analysis
-├── validation_results/
-│   ├── BASELINE_SUMMARY.md         # Baseline model report
-│   └── CONDITIONAL_SUMMARY.md      # Conditional model report ⭐
+│   ├── train_baseline.py
+│   ├── train_conditional.py
+│   ├── train_hdp_hmm.py     # Train HDP-HMM
+│   ├── train_hdp_hsmm.py    # Train HDP-HSMM
+│   ├── test_baseline.py
+│   ├── test_conditional.py
+│   ├── test_hdp_hmm.py      # Test HDP-HMM
+│   ├── test_hdp_hsmm.py     # Test HDP-HSMM
+│   ├── compare_models.py    # Compare Baseline vs Conditional
+│   └── compare_hdp_models.py # Compare HDP-HMM vs HDP-HSMM
+├── music_generation/        # Generation scripts
+│   ├── generate_hdp_hmm_simple.py
+│   ├── generate_hdp_hmm_full.py
+│   ├── generate_hdp_hsmm_simple.py
+│   └── generate_hdp_hsmm_full.py
 ├── src/
-│   └── data/                # Dataset loaders & preprocessing
-│       ├── pop909_parser.py      # POP909 dataset loader
-│       ├── chord_preprocessing.py # Chord normalization & transposition
-│       └── key_aware_features.py  # Functional chord extraction
+│   ├── data/                # Data processing modules
+│   └── models/              # Core model classes
+│       ├── hdp_hmm.py       # HDP-HMM implementation
+│       └── hdp_hsmm.py      # HDP-HSMM implementation
 └── README.md
 ```
 
@@ -88,12 +108,22 @@ Download POP909 dataset and place it in `data/POP909/`
 python scripts/train_baseline.py --pop909 data/POP909 --out models/hmm_baseline.pkl
 ```
 
-**Train conditional model (recommended):**
+**Train conditional model:**
 ```bash
 python scripts/train_conditional.py --pop909 data/POP909 --out models/hmm_conditional.pkl
 ```
 
 Add `--limit 20` for quick testing on 20 songs.
+
+**Train HDP-HMM:**
+```bash
+python scripts/train_hdp_hmm.py
+```
+
+**Train HDP-HSMM:**
+```bash
+python scripts/train_hdp_hsmm.py
+```
 
 ### 4. Evaluate Models
 
@@ -107,9 +137,14 @@ python scripts/test_baseline.py --model models/hmm_baseline.pkl --pop909 data/PO
 python scripts/test_conditional.py --model models/hmm_conditional.pkl --pop909 data/POP909
 ```
 
-**Compare models:**
+**Compare Baseline and Conditional models:**
 ```bash
 python scripts/compare_models.py
+```
+
+** Compare HDP-HMM and HDP-HSMM:**
+```bash
+python scripts/compare_hdp_models.py --pop909 data/POP909
 ```
 
 ### 5. Generate Music 🎵 NEW!
@@ -120,7 +155,7 @@ Use your trained model to generate new chord progressions and convert them to pl
 python music_generation/quick_test.py
 ```
 
-**Generate full music with melody and bass:**
+**Generate full music with melody and bass (e.g. conditional):**
 ```bash
 python music_generation/generate_full_music.py \
     --model models/hmm_conditional.pkl \
@@ -129,7 +164,7 @@ python music_generation/generate_full_music.py \
     --output generated_music/my_song.mid
 ```
 
-**Generate simple chord progression:**
+**Generate simple chord progression (e.g. conditional):**
 ```bash
 python music_generation/generate_music.py \
     --model models/hmm_conditional.pkl \
