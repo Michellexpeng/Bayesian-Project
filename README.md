@@ -1,4 +1,29 @@
-# Bayesian Chord Progression Model
+# Bayesian & Neural Approaches for Chord Generation Tasks in Pop Music
+This project aims to explore how different modeling paradigms — Bayesian models and neural sequence models — capture musical structure in pop music.
+We evaluate two categories of tasks:
+### Task A — Harmonic Structure Modeling (Bayesian Models)
+- Modeling chord progressions using interpretable statistical frameworks (HMM, HDP-HMM, HDP-HSMM), focusing on functional harmony, mode, and explicit duration modeling.
+### Task B — Melody → Piano Accompaniment Generation (Neural Models)
+- Predicting full piano accompaniment (128-dim piano roll) from melody bars using LSTM encoder-decoder models. This task is significantly more complex and high-dimensional, making it unsuitable for traditional Bayesian models, so we tried to solve it with Neural Models.
+
+#### Why We Use Two Tasks？
+Our original goal was to **generate full piano accompaniment from melody tracks**.
+
+However, we found that accompaniment pianorolls are **extremely high-dimensional** (128-dim multi-label states), making them **unsuitable for Bayesian models** such as HMM / HDP-HMM. The state space becomes too large to learn stable transition probabilities.
+
+To keep the Bayesian part meaningful, we redesigned that task to **20-class functional chord prediction**, which fits the assumptions of probabilistic models and allows interpretable harmonic structure learning.
+
+At the same time, we preserved the **original accompaniment-generation task** for the LSTM model, since neural sequence-to-sequence models are capable of handling high-dimensional polyphonic outputs.
+
+Thus our final project consists of:
+Bayesian Models → functional harmony modeling (20 chords)
+LSTM Model → full pianoroll accompaniment generation (original task)
+
+This setup lets each modeling approach operate where it is most effective, while still addressing the broader theme of learning musical structure.
+
+Below we first present the full results of Task A (Bayesian models), followed by Task B (LSTM accompaniment generation), which extends the project into a more challenging generative scenario.
+
+# Task A: Bayesian Chord Progression Modeling
 
 A Bayesian approach to modeling chord progressions in pop music using Hidden Markov Models (HMM) with functional harmony and mode-conditional modeling.
 
@@ -218,4 +243,111 @@ See detailed reports:
 - 2nd-order Markov models (bigram → trigram)
 - Melody conditioning: P(chord | previous_chord, melody, mode)
 - Rhythm and duration modeling
-- Neural baselines (LSTM/Transformer) for comparison
+
+# Task B: Melody → Piano Accompaniment Generation (LSTM Model)
+
+This task aims to generate piano accompaniment directly from melody tracks, using an LSTM auto-regressive decoder architecture. Unlike Task A (Bayesian chord modeling), Task B attempts to model full 128-dimensional polyphonic pianoroll, making it a high-dimensional, multi-label sequence prediction problem.
+
+## Dataset Processing
+We use the POP909 dataset, which contains aligned melody, bridge, and piano tracks for 909 pop songs.
+Because raw MIDI event timing is inconsistent and difficult for neural networks to learn directly, we convert all tracks into a bar-level pianoroll representation:
+
+### Processing steps
+1. Frame Sampling (fs = 2)
+- Each beat is sampled into 2 frames (low temporal resolution to reduce model complexity).
+- Converts continuous MIDI events into a fixed-length frame sequence.
+
+2. Bar Resampling (steps_per_bar = 16)
+- Each bar is normalized to 16 time steps.
+- Melody and accompaniment are reshaped into tensors of shape: [num_bars, 16, 128]，where 128 is the pitch dimension.
+
+3. Train/Val/Test Split
+- We follow an 80/10/10 split based on songs.
+- The split is performed at the song level to prevent data leakage.
+
+4. Model Input / Output Format
+For each bar, the dataset provides:
+- mel_ctx: melody of previous N bars
+- piano_ctx: accompaniment of previous N bars
+- mel_bar: melody of the current bar
+- piano_bar: ground truth accompaniment of the current bar
+
+## Model Architecture
+
+We adopt a Bar-level Encoder–Decoder LSTM capable of generating a full bar of accompaniment conditioned on melody:
+
+### Encoder
+
+The encoder LSTM takes the concatenation of:
+Melody context (ctx_bars × 16 × 128)
+Piano context (ctx_bars × 16 × 128)
+
+Encoded using a multi-layer LSTM to obtain a hidden state summarizing the harmonic/melodic history. And it outputs hidden states (h, c).
+
+### Decoder
+
+The decoder generates the accompaniment for the current bar step-by-step.
+At each timestep t: input_t = concat(mel_bar[t], prev_piano)
+mel_bar[t] is the melody at timestep t
+
+prev_piano is either
+ - ground-truth (teacher forcing during training)
+ - or previous prediction (during inference)
+
+The decoder uses the encoder’s (h, c) as initialization, so:
+The generated accompaniment is conditioned on both music history and the current bar’s melody.
+
+### Output Layer
+
+A linear projection maps LSTM outputs to a 128-dim pitch vector:
+logits → 128 probabilities (one per pitch)
+
+A sigmoid is applied later during inference; thresholding + top-K selection controls sparsity.
+
+### Loss function
+- Binary cross-entropy (BCE) over the 128 pitch outputs
+- Pos-weighting to handle sparsity of pianoroll
+This model directly predicts dense 16×128 accompaniment for each bar.
+
+
+
+## Key Challenges
+
+1) Sparsity of pianoroll
+
+Piano accompaniment contains few active notes per time step
+Without proper weighting, models tend to output overly low probabilities or trivial solutions
+
+Solve this by add loss to encourage the probability of some notes 
+
+2) Prediction collapse
+
+Some models collapse to repeating a single chord
+
+Solve this by tuning of: context size, loss weighting, sparsity penalty, decoding thresholds
+
+
+## Results
+<img width="2560" height="1112" alt="image" src="https://github.com/user-attachments/assets/0d0dc20d-dff6-4ee2-8595-0a921dca00f6" />
+
+Also, some sample generation can be see in the LSTM fold.
+
+
+## Future Work
+
+### Explore more expressive sequence models
+Our current LSTM model captures local temporal patterns, but future work may investigate more powerful architectures (e.g., Transformer variants, diffusion models, or hierarchical RNNs) that can better model long-range harmonic structure and multi-voice interactions.
+
+### Combine LSTM with probabilistic models
+Because HMMs excel at capturing high-level harmonic transitions while LSTMs learn fine-grained temporal patterns, a hybrid system—e.g., HMM for chord-level structure + LSTM for frame-level realization—may leverage the strengths of both paradigms.
+
+### Modular modeling for different musical roles
+We are thinking about train separate models for chord progression, rhythmic patterns, and voice-leading, and then fuse the outputs. This may reduce complexity and improve controllability.
+
+### Reverse-direction modeling: Piano → Melody
+Since accompaniment often contains richer polyphonic information (multiple notes per timestep) while melody is typically monophonic, the reverse task—predicting melody from piano accompaniment—may be easier for sequence models and could provide useful insights into the melodic structure present in accompaniment.
+
+
+
+
+
