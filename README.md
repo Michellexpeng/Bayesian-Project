@@ -330,11 +330,22 @@ Solve this by add loss to encourage the probability of some notes
 2) Prediction collapse
 
 Some models collapse to repeating a single chord
+<img width="1438" height="798" alt="image" src="https://github.com/user-attachments/assets/ec0d3661-7d29-4c7e-81b2-c932737a3f66" />
+
 
 Solve this by tuning of: context size, loss weighting, sparsity penalty, decoding thresholds
 
 
 ## Results
+Testing different threshold:
+0.5:
+<img width="1438" height="820" alt="image" src="https://github.com/user-attachments/assets/ce044a37-85f2-4e9f-a3b5-9d943d6780ac" />
+0.7:
+<img width="1398" height="802" alt="image" src="https://github.com/user-attachments/assets/22339542-d782-4a3e-b6c5-d0dbc7d5c5f5" />
+0.8
+<img width="1458" height="800" alt="image" src="https://github.com/user-attachments/assets/7e0a9788-91ba-4c7e-95df-a79c3dbb24a4" />
+
+Whole song(threshold=0.7):
 <img width="2560" height="1112" alt="image" src="https://github.com/user-attachments/assets/0d0dc20d-dff6-4ee2-8595-0a921dca00f6" />
 
 Also, some sample generation can be see in the LSTM/midis.
