@@ -259,7 +259,11 @@ Because raw MIDI event timing is inconsistent and difficult for neural networks 
 
 2. Bar Resampling (steps_per_bar = 16)
 - Each bar is normalized to 16 time steps.
-- Melody and accompaniment are reshaped into tensors of shape: [num_bars, 16, 128]，where 128 is the pitch dimension.
+- Melody and accompaniment are reshaped into tensors of shape:
+  ```bash
+  [num_bars, 16, 128]
+  ```
+  where 128 is the pitch dimension.
 
 3. Train/Val/Test Split
 - We follow an 80/10/10 split based on songs.
@@ -287,7 +291,10 @@ Encoded using a multi-layer LSTM to obtain a hidden state summarizing the harmon
 ### Decoder
 
 The decoder generates the accompaniment for the current bar step-by-step.
-At each timestep t: input_t = concat(mel_bar[t], prev_piano)
+At each timestep t: 
+```bash
+input_t = concat(mel_bar[t], prev_piano)
+```
 mel_bar[t] is the melody at timestep t
 
 prev_piano is either
