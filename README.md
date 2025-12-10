@@ -330,7 +330,7 @@ Solve this by tuning of: context size, loss weighting, sparsity penalty, decodin
 ## Results
 <img width="2560" height="1112" alt="image" src="https://github.com/user-attachments/assets/0d0dc20d-dff6-4ee2-8595-0a921dca00f6" />
 
-Also, some sample generation can be see in the LSTM fold.
+Also, some sample generation can be see in the LSTM/midis.
 
 
 ## Future Work
