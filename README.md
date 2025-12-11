@@ -294,7 +294,8 @@ Encoded using a multi-layer LSTM to obtain a hidden state summarizing the harmon
 The decoder generates the accompaniment for the current bar step-by-step.
 At each timestep t: 
 ```bash
-input_t = concat(mel_bar[t], prev_piano)
+dec_in_t = concat(mel_bar[t], prev_piano)
+out, (h, c) = decoder(dec_in_t, (h, c))
 ```
 mel_bar[t] is the melody at timestep t
 
