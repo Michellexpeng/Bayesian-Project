@@ -16,9 +16,9 @@ To keep the Bayesian part meaningful, we redesigned that task to **20-class func
 At the same time, we preserved the **original accompaniment-generation task** for the LSTM model, since neural sequence-to-sequence models are capable of handling high-dimensional polyphonic outputs.
 
 Thus our final project consists of:
-- Bayesian Models → functional harmony modeling (20 chords)
+- Bayesian Models → functional harmony modeling
 
-- LSTM Model → full pianoroll accompaniment generation (original task)
+- LSTM Model → full pianoroll accompaniment generation
 
 This setup lets each modeling approach operate where it is most effective, while still addressing the broader theme of learning musical structure.
 
