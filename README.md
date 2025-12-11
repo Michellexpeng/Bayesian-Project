@@ -284,10 +284,14 @@ We adopt a Bar-level Encoder–Decoder LSTM capable of generating a full bar of 
 ### Encoder
 
 The encoder LSTM takes the concatenation of:
-Melody context (ctx_bars × 16 × 128)
-Piano context (ctx_bars × 16 × 128)
+- Melody context (ctx_bars × 16 × 128)
+- Piano context (ctx_bars × 16 × 128)
 
 Encoded using a multi-layer LSTM to obtain a hidden state summarizing the harmonic/melodic history. And it outputs hidden states (h, c).
+```bash
+enc_in = concat(mel_ctx, piano_ctx)
+_, (h, c) = encoder(enc_in)
+```
 
 ### Decoder
 
