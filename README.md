@@ -258,8 +258,8 @@ Because raw MIDI event timing is inconsistent and difficult for neural networks 
 - Each beat is sampled into 2 frames (low temporal resolution to reduce model complexity).
 - Converts continuous MIDI events into a fixed-length frame sequence.
 
-2. Bar Resampling (steps_per_bar = 16)
-- Each bar is normalized to 16 time steps.
+2. Bar Split (steps_per_bar = 16)
+- Each bar contains 16 time steps.
 - Melody and accompaniment are reshaped into tensors of shape:
   ```bash
   [num_bars, 16, 128]
